@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Potion Mixer - Master the Art of Alchemy in this 2D magical puzzle game. Combine ingredients in the correct order to brew target potions!">
+  <title>Potion Mixer – Master the Art of Alchemy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Ambient Magical Canvas for Particles -->
+  <canvas id="ambient-canvas"></canvas>
+
+  <!-- Sound Toggle Float Button (Always accessible or in header) -->
+  <div class="sound-quick-toggle">
+    <button id="global-sound-btn" class="icon-btn" title="Toggle Sound (Mute/Unmute)" aria-label="Toggle Sound">
+      <span class="sound-icon">🔊</span>
+      <span class="sound-text">Sound: ON</span>
+    </button>
+  </div>
+
+  <main id="game-app">
+    <!-- ==================== MAIN MENU SCREEN ==================== -->
+    <section id="screen-menu" class="screen active">
+      <div class="menu-container glass-card">
+        <div class="magic-crest">
+          <svg class="crest-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="44" stroke="url(#crest-grad)" stroke-width="2.5" stroke-dasharray="4 4" class="crest-ring"/>
+            <polygon points="50,14 82,78 18,78" stroke="#a78bfa" stroke-width="2" fill="none" opacity="0.6"/>
+            <polygon points="50,86 18,22 82,22" stroke="#38bdf8" stroke-width="2" fill="none" opacity="0.6"/>
+            <circle cx="50" cy="50" r="16" fill="url(#core-grad)" class="crest-core"/>
+            <defs>
+              <linearGradient id="crest-grad" x1="0" y1="0" x2="100" y2="100">
+                <stop offset="0%" stop-color="#c084fc"/>
+                <stop offset="100%" stop-color="#38bdf8"/>
+              </linearGradient>
+              <radialGradient id="core-grad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#f472b6"/>
+                <stop offset="70%" stop-color="#8b5cf6"/>
+                <stop offset="100%" stop-color="#312e81"/>
+              </radialGradient>
+            </defs>
+          </svg>
+        </div>
+
+        <h1 class="game-title">POTION MIXER</h1>
+        <p class="game-subtitle">✨ Master the Art of Alchemy ✨</p>
+        <p class="game-tagline">Combine mystical ingredients in the precise sequence to discover ancient brews</p>
+
+        <div class="menu-stats-pill">
+          <span class="stat-label">Best Score:</span>
+          <span id="menu-best-score" class="stat-value">0</span>
+          <span class="stat-star">⭐</span>
+        </div>
+
+        <div class="menu-actions">
+          <button id="btn-play-game" class="btn btn-primary btn-large glow-hover">
+            <span class="btn-icon">🔮</span>
+            <span>Play Game</span>
+          </button>
+          <button id="btn-how-to-play" class="btn btn-secondary">
+            <span class="btn-icon">📜</span>
+            <span>How to Play</span>
+          </button>
+          <button id="btn-menu-sound" class="btn btn-tertiary">
+            <span class="btn-icon" id="menu-sound-icon">🔊</span>
+            <span id="menu-sound-text">Sound: ON</span>
+          </button>
+        </div>
+
+        <footer class="menu-footer">
+          <span>Game ID: G0427 • 10 Progressive Alchemy Levels</span>
+        </footer>
+      </div>
+    </section>
+
+    <!-- ==================== GAMEPLAY SCREEN ==================== -->
+    <section id="screen-gameplay" class="screen">
+      <!-- Top Navigation & Score Bar -->
+      <header class="game-header glass-bar">
+        <div class="header-left">
+          <button id="btn-return-menu" class="btn btn-small btn-ghost" title="Return to Main Menu">
+            <span>◀ Menu</span>
+          </button>
+          <div class="level-indicator">
+            <span class="level-badge" id="hud-level-badge">Level 1 / 10</span>
+          </div>
+        </div>
+
+        <div class="header-center">
+          <div class="target-title-wrap">
+            <span class="target-subtext">Target Potion:</span>
+            <span class="target-name" id="hud-target-name">Healing Potion</span>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <div class="score-display">
+            <span class="score-label">Score</span>
+            <span class="score-val" id="hud-current-score">0</span>
+          </div>
+          <button id="btn-restart-level" class="btn btn-small btn-ghost" title="Restart Current Level">
+            <span>🔄 Restart</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Play Area Layout -->
+      <div class="game-layout">
+        <!-- LEFT PANEL: Target Potion Codex & Hints -->
+        <aside class="panel target-panel glass-card">
+          <div class="panel-header">
+            <h3>Target Brew</h3>
+            <span class="pedestal-rune">✦ ✦ ✦</span>
+          </div>
+
+          <div class="target-display-area">
+            <div class="potion-preview-container" id="target-bottle-container">
+              <!-- SVG Target Potion Bottle rendered via JS -->
+              <div id="target-bottle-svg-wrap" class="bottle-svg-wrap"></div>
+              <div class="bottle-aura" id="target-bottle-aura"></div>
+            </div>
+
+            <div class="target-details">
+              <h2 id="target-potion-name" class="potion-title">Healing Potion</h2>
+              <p id="target-potion-desc" class="potion-desc">A soothing crimson brew that repairs vitality and mends weary spirits.</p>
+              
+              <div class="recipe-clue-badge">
+                <span class="clue-icon">🧪</span>
+                <span id="target-ingredient-count">Requires 3 Ingredients</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="hint-section">
+            <div class="hint-header">
+              <span class="hint-title">Alchemical Guidance</span>
+              <span class="hint-penalty-badge" id="hint-status-badge">-30 pts if used</span>
+            </div>
+            <p id="hint-text" class="hint-text">Stuck? Ask the Ancient Grimoire for a recipe revelation.</p>
+            <button id="btn-request-hint" class="btn btn-hint glow-hover">
+              <span class="btn-icon">💡</span>
+              <span>Reveal Clue</span>
+            </button>
+          </div>
+        </aside>
+
+        <!-- CENTER PANEL: Cauldron & Recipe Assembly -->
+        <section class="panel cauldron-panel glass-card">
+          <div class="cauldron-workspace">
+            <!-- Floating Bubble FX Layer -->
+            <div class="cauldron-fx-container" id="cauldron-fx-layer">
+              <div class="steam-stream stream-1"></div>
+              <div class="steam-stream stream-2"></div>
+              <div class="steam-stream stream-3"></div>
+            </div>
+
+            <!-- Dynamic Interactive Cauldron SVG -->
+            <div class="cauldron-container" id="cauldron-interactive">
+              <svg class="cauldron-svg" viewBox="0 0 320 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Underglow Fire/Magic -->
+                <ellipse cx="160" cy="255" rx="100" ry="18" fill="url(#fire-glow)" opacity="0.8" class="underfire-glow"/>
+                <path d="M120 258 Q160 230 200 258 Q170 270 120 258Z" fill="#ff7700" opacity="0.75" class="fire-flame flame-1"/>
+                <path d="M135 258 Q160 235 185 258 Q165 266 135 258Z" fill="#ffdd00" opacity="0.9" class="fire-flame flame-2"/>
+
+                <!-- Cauldron Stand / Feet -->
+                <path d="M90 230 L70 265 L88 267 L105 235" fill="#1e1b4b" stroke="#312e81" stroke-width="2"/>
+                <path d="M230 230 L250 265 L232 267 L215 235" fill="#1e1b4b" stroke="#312e81" stroke-width="2"/>
+                <path d="M160 240 L160 268 L152 268 L152 240" fill="#1e1b4b" stroke="#312e81" stroke-width="2"/>
+
+                <!-- Cauldron Belly Outer -->
+                <path d="M60 110 C50 170, 75 240, 160 240 C245 240, 270 170, 260 110 Z" fill="#0f172a" stroke="#475569" stroke-width="3"/>
+                <!-- Cauldron Belly Highlight -->
+                <path d="M72 120 C64 165, 82 220, 150 226" stroke="#64748b" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+                
+                <!-- Runic Inscription Arc -->
+                <path d="M95 160 Q160 190 225 160" stroke="#a855f7" stroke-width="2" stroke-dasharray="5 7" opacity="0.8" class="runic-line"/>
+                <circle cx="160" cy="175" r="5" fill="#38bdf8" opacity="0.8" class="runic-gem"/>
+
+                <!-- Cauldron Liquid (Dynamic Color & Animation) -->
+                <ellipse id="cauldron-liquid" cx="160" cy="110" rx="90" ry="24" fill="url(#liquid-gradient)" class="liquid-surface"/>
+                <ellipse id="cauldron-liquid-glow" cx="160" cy="110" rx="80" ry="19" fill="url(#surface-specular)" opacity="0.6"/>
+
+                <!-- Bubbles inside cauldron -->
+                <g class="liquid-bubbles" id="svg-liquid-bubbles">
+                  <circle cx="140" cy="112" r="3.5" fill="#ffffff" opacity="0.7" class="svg-bubble b1"/>
+                  <circle cx="175" cy="116" r="4.5" fill="#ffffff" opacity="0.6" class="svg-bubble b2"/>
+                  <circle cx="155" cy="106" r="2.5" fill="#ffffff" opacity="0.8" class="svg-bubble b3"/>
+                  <circle cx="190" cy="110" r="3" fill="#ffffff" opacity="0.6" class="svg-bubble b4"/>
+                </g>
+
+                <!-- Cauldron Rim Front Arc -->
+                <ellipse cx="160" cy="108" rx="98" ry="25" fill="none" stroke="#64748b" stroke-width="7"/>
+                <ellipse cx="160" cy="107" rx="98" ry="25" fill="none" stroke="#cbd5e1" stroke-width="1.5" opacity="0.6"/>
+
+                <!-- Side Handles -->
+                <path d="M56 120 C35 120, 35 150, 58 152" stroke="#475569" stroke-width="5" fill="none" stroke-linecap="round"/>
+                <path d="M264 120 C285 120, 285 150, 262 152" stroke="#475569" stroke-width="5" fill="none" stroke-linecap="round"/>
+
+                <defs>
+                  <radialGradient id="fire-glow" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#f97316"/>
+                    <stop offset="40%" stop-color="#ef4444" stop-opacity="0.6"/>
+                    <stop offset="100%" stop-color="#7c2d12" stop-opacity="0"/>
+                  </radialGradient>
+                  <linearGradient id="liquid-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop id="liquid-stop-1" offset="0%" stop-color="#6366f1"/>
+                    <stop id="liquid-stop-2" offset="50%" stop-color="#8b5cf6"/>
+                    <stop id="liquid-stop-3" offset="100%" stop-color="#a855f7"/>
+                  </linearGradient>
+                  <radialGradient id="surface-specular" cx="50%" cy="40%" r="50%">
+                    <stop offset="0%" stop-color="#ffffff" stop-opacity="0.8"/>
+                    <stop offset="50%" stop-color="#ffffff" stop-opacity="0.2"/>
+                    <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+                  </radialGradient>
+                </defs>
+              </svg>
+
+              <!-- Particle Splashes & Smoke on Cauldron -->
+              <div id="cauldron-burst-effect" class="cauldron-burst-effect"></div>
+            </div>
+
+            <!-- Recipe Slots (Selected sequence of ingredients) -->
+            <div class="recipe-sequence-bar">
+              <div class="slots-header">
+                <span class="slots-title">Infusion Order (1st ➔ Last):</span>
+                <span class="slots-count" id="slots-count-text">0 / 4 added</span>
+              </div>
+              <div class="slots-container" id="recipe-slots-container">
+                <!-- Dynamically populated ingredient slots -->
+              </div>
+            </div>
+
+            <!-- Action Controls -->
+            <div class="cauldron-controls">
+              <button id="btn-undo-ingredient" class="btn btn-control" title="Remove the last added ingredient">
+                <span class="btn-icon">↩</span>
+                <span>Undo</span>
+              </button>
+              <button id="btn-clear-recipe" class="btn btn-control" title="Clear all ingredients from cauldron">
+                <span class="btn-icon">🗑️</span>
+                <span>Clear</span>
+              </button>
+              <button id="btn-brew-potion" class="btn btn-brew glow-primary">
+                <span class="btn-icon">🔥</span>
+                <span>Brew Potion</span>
+              </button>
+            </div>
+
+            <!-- Live Status Message / Toast inside Cauldron Area -->
+            <div id="cauldron-message-box" class="cauldron-status-box info">
+              <span id="cauldron-message-icon">🔮</span>
+              <span id="cauldron-message-text">Select ingredients from the shelf below to begin your concoction.</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- RIGHT / BOTTOM PANEL: Apothecary Ingredient Shelf -->
+        <section class="panel shelf-panel glass-card">
+          <div class="panel-header">
+            <h3>Apothecary Shelf</h3>
+            <span class="shelf-instruction">Click an ingredient to add it to the cauldron</span>
+          </div>
+
+          <div class="ingredients-grid" id="ingredients-shelf-grid">
+            <!-- 8 Ingredients generated by JS with rich SVGs -->
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- ==================== HOW TO PLAY MODAL ==================== -->
+    <div id="modal-how-to-play" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+      <div class="modal-card glass-card">
+        <div class="modal-header">
+          <h2>📜 Grimoire of Instructions</h2>
+          <button id="btn-close-how-to-play" class="modal-close-btn" aria-label="Close modal">✕</button>
+        </div>
+
+        <div class="modal-body instructions-content">
+          <div class="guide-step">
+            <span class="step-num">1</span>
+            <div>
+              <h4>Study the Target Potion</h4>
+              <p>Each level challenges you to brew a specific target potion (e.g. <em>Healing Potion</em> or <em>Ultimate Elixir</em>) with a distinct magical glow and recipe.</p>
+            </div>
+          </div>
+
+          <div class="guide-step">
+            <span class="step-num">2</span>
+            <div>
+              <h4>Select Ingredients in Sequence</h4>
+              <p>Add ingredients into the cauldron one by one. The <strong>order of addition matters</strong> in high-tier alchemy!</p>
+            </div>
+          </div>
+
+          <div class="guide-step">
+            <span class="step-num">3</span>
+            <div>
+              <h4>Brew & Evaluate</h4>
+              <p>Hit the <strong>Brew Potion</strong> button. If your combination and order are correct, the potion materializes and you advance to the next level. If wrong, adjust your recipe and try again!</p>
+            </div>
+          </div>
+
+          <div class="guide-step">
+            <span class="step-num">4</span>
+            <div>
+              <h4>Scoring & Hints</h4>
+              <p>Brewing without hints earns <strong>100 points</strong>. If you are stuck, consult the <strong>Reveal Clue</strong> button for guidance (earns <strong>70 points</strong>). Your high score is saved automatically!</p>
+            </div>
+          </div>
+
+          <div class="guide-controls-tips">
+            <div class="tip-badge">💡 <strong>Tip:</strong> Use <strong>Undo</strong> to pop the latest ingredient or <strong>Clear</strong> to start fresh!</div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button id="btn-close-how-to-play-footer" class="btn btn-primary">Understood, Let's Brew!</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== LEVEL VICTORY MODAL ==================== -->
+    <div id="modal-level-success" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+      <div class="modal-card victory-card glass-card">
+        <div class="victory-sparkles">✨ ⭐ 🌟 ⭐ ✨</div>
+        <h2 id="victory-title" class="victory-title">Potion Mastered!</h2>
+        
+        <div class="victory-potion-preview" id="victory-potion-bottle">
+          <!-- Rendered target bottle copy -->
+        </div>
+
+        <h3 id="victory-potion-name" class="victory-potion-name">Healing Potion</h3>
+        <p id="victory-message" class="victory-desc">The alchemical reaction stabilized into perfection!</p>
+
+        <div class="victory-score-pill">
+          <span class="score-pill-label">Points Awarded:</span>
+          <span id="victory-awarded-points" class="score-pill-val">+100</span>
+        </div>
+
+        <div class="modal-actions">
+          <button id="btn-next-level" class="btn btn-primary btn-large glow-hover">
+            <span>Next Level ➔</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== FINAL GAME COMPLETE MODAL ==================== -->
+    <div id="modal-game-complete" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+      <div class="modal-card game-complete-card glass-card">
+        <div class="archmage-crown">👑</div>
+        <h2 class="victory-title">GRAND ALCHEMIST!</h2>
+        <p class="victory-subtitle">You have successfully brewed all 10 Legendary Potions!</p>
+
+        <div class="complete-stats-grid">
+          <div class="stat-box">
+            <span class="stat-box-num" id="final-completed-levels">10 / 10</span>
+            <span class="stat-box-label">Levels Solved</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-box-num" id="final-total-score">1000</span>
+            <span class="stat-box-label">Final Score</span>
+          </div>
+          <div class="stat-box highlight">
+            <span class="stat-box-num" id="final-best-score">1000</span>
+            <span class="stat-box-label">Record High Score</span>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button id="btn-play-again" class="btn btn-primary btn-large glow-hover">
+            <span class="btn-icon">✨</span>
+            <span>Play Again</span>
+          </button>
+          <button id="btn-complete-menu" class="btn btn-secondary">
+            <span>Return to Menu</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
